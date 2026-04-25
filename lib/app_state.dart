@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -45,10 +46,7 @@ class AppSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     if (_supabaseEnabled) {
       await Supabase.instance.client.auth.signInWithPassword(
         email: email,
@@ -103,10 +101,7 @@ class AppSession extends ChangeNotifier {
 }
 
 class SignUpResult {
-  const SignUpResult({
-    required this.signedIn,
-    this.message,
-  });
+  const SignUpResult({required this.signedIn, this.message});
 
   final bool signedIn;
   final String? message;
@@ -126,7 +121,8 @@ class DemoStore extends ChangeNotifier {
       score: 89,
       scoreColor: Color(0xFF00BFA5),
       scoreLabel: 'Trusted',
-      about: 'Final-year student buying textbooks for exams. Has repaid every request on time.',
+      about:
+          'Final-year student buying textbooks for exams. Has repaid every request on time.',
       requestDescription:
           'Need P1,500 for university textbooks, paying back end of month, 30% interest',
       targetAmount: 1500,
@@ -164,7 +160,8 @@ class DemoStore extends ChangeNotifier {
       score: 55,
       scoreColor: Color(0xFFE53935),
       scoreLabel: 'Needs review',
-      about: 'Runs a small delivery business and wants to bridge fuel costs for the week.',
+      about:
+          'Runs a small delivery business and wants to bridge fuel costs for the week.',
       requestDescription:
           'Need P1,300 to restock fuel and mobile data, paying back in 3 weeks with 19% interest',
       targetAmount: 1300,
@@ -183,7 +180,7 @@ class DemoStore extends ChangeNotifier {
       subtitle: 'Today, 9:14am',
       amount: 300,
       isCredit: false,
-      icon: Icons.north_east_rounded,
+      icon: HugeIcons.strokeRoundedArrowUpRight01,
       category: TransactionCategory.funding,
       createdAt: DateTime.now().subtract(const Duration(hours: 2)),
     ),
@@ -192,7 +189,7 @@ class DemoStore extends ChangeNotifier {
       subtitle: 'Mar 12',
       amount: 420,
       isCredit: true,
-      icon: Icons.south_west_rounded,
+      icon: HugeIcons.strokeRoundedArrowDownLeft01,
       category: TransactionCategory.repayment,
       createdAt: DateTime(2026, 3, 12, 11, 30),
     ),
@@ -239,17 +236,22 @@ class DemoStore extends ChangeNotifier {
     );
   }
 
-  FundingResult fundMember({
-    required String memberId,
-    required double amount,
-  }) {
+  FundingResult fundMember({required String memberId, required double amount}) {
     if (amount <= 0) {
-      return const FundingResult(success: false, message: 'Enter a valid amount.');
+      return const FundingResult(
+        success: false,
+        message: 'Enter a valid amount.',
+      );
     }
 
-    final index = _communityMembers.indexWhere((member) => member.id == memberId);
+    final index = _communityMembers.indexWhere(
+      (member) => member.id == memberId,
+    );
     if (index == -1) {
-      return const FundingResult(success: false, message: 'Borrower not found.');
+      return const FundingResult(
+        success: false,
+        message: 'Borrower not found.',
+      );
     }
 
     final member = _communityMembers[index];
@@ -284,7 +286,7 @@ class DemoStore extends ChangeNotifier {
         subtitle: formatActivityTime(timestamp),
         amount: fundedAmount,
         isCredit: false,
-        icon: Icons.north_east_rounded,
+        icon: HugeIcons.strokeRoundedArrowUpRight01,
         category: TransactionCategory.funding,
         createdAt: timestamp,
       ),
@@ -307,7 +309,10 @@ class DemoStore extends ChangeNotifier {
 
   FundingResult topUpWallet(double amount) {
     if (amount <= 0) {
-      return const FundingResult(success: false, message: 'Enter a valid amount.');
+      return const FundingResult(
+        success: false,
+        message: 'Enter a valid amount.',
+      );
     }
 
     _walletBalance += amount;
@@ -319,7 +324,7 @@ class DemoStore extends ChangeNotifier {
         subtitle: formatActivityTime(timestamp),
         amount: amount,
         isCredit: true,
-        icon: Icons.add_rounded,
+        icon: HugeIcons.strokeRoundedPlusSign,
         category: TransactionCategory.wallet,
         createdAt: timestamp,
       ),
@@ -344,7 +349,10 @@ class DemoStore extends ChangeNotifier {
     required String recipient,
   }) {
     if (amount <= 0) {
-      return const FundingResult(success: false, message: 'Enter a valid amount.');
+      return const FundingResult(
+        success: false,
+        message: 'Enter a valid amount.',
+      );
     }
     if (recipient.trim().isEmpty) {
       return const FundingResult(success: false, message: 'Enter a recipient.');
@@ -365,7 +373,7 @@ class DemoStore extends ChangeNotifier {
         subtitle: formatActivityTime(timestamp),
         amount: amount,
         isCredit: false,
-        icon: Icons.swap_horiz_rounded,
+        icon: HugeIcons.strokeRoundedArrowLeftRight,
         category: TransactionCategory.wallet,
         createdAt: timestamp,
       ),
@@ -385,12 +393,12 @@ class DemoStore extends ChangeNotifier {
     );
   }
 
-  FundingResult submitRequest({
-    required double amount,
-    required String note,
-  }) {
+  FundingResult submitRequest({required double amount, required String note}) {
     if (amount <= 0) {
-      return const FundingResult(success: false, message: 'Enter a valid amount.');
+      return const FundingResult(
+        success: false,
+        message: 'Enter a valid amount.',
+      );
     }
 
     final timestamp = DateTime.now();
@@ -434,17 +442,10 @@ class DemoStore extends ChangeNotifier {
   }
 }
 
-enum TransactionCategory {
-  funding,
-  repayment,
-  wallet,
-}
+enum TransactionCategory { funding, repayment, wallet }
 
 class FundingResult {
-  const FundingResult({
-    required this.success,
-    required this.message,
-  });
+  const FundingResult({required this.success, required this.message});
 
   final bool success;
   final String message;
@@ -496,9 +497,7 @@ class CommunityMember {
 
   String get progressText => '${(progress * 100).round()}%';
 
-  CommunityMember copyWith({
-    double? fundedAmount,
-  }) {
+  CommunityMember copyWith({double? fundedAmount}) {
     return CommunityMember(
       id: id,
       name: name,
@@ -535,7 +534,7 @@ class AppTransaction {
   final String subtitle;
   final double amount;
   final bool isCredit;
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final TransactionCategory category;
   final DateTime createdAt;
 
@@ -607,8 +606,8 @@ String _formatClock(DateTime value) {
   final hour = value.hour == 0
       ? 12
       : value.hour > 12
-          ? value.hour - 12
-          : value.hour;
+      ? value.hour - 12
+      : value.hour;
   final suffix = value.hour >= 12 ? 'pm' : 'am';
   return '$hour:${value.minute.toString().padLeft(2, '0')}$suffix';
 }

@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 
 import 'app_state.dart';
 import 'app_routes.dart';
-import 'screens/community_fund_screen.dart';
-import 'screens/create_account_screen.dart';
-import 'screens/community_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/lend_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/request_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/reset_password_screen.dart';
-import 'screens/splash_screen.dart';
-import 'screens/wallet_screen.dart';
-import 'screens/ask_kutlo_screen.dart';
+import 'features/ask_kutlo/ask_kutlo_screen.dart';
+import 'features/auth/reset_password/reset_password_screen.dart';
+import 'features/auth/sign_in/sign_in_screen.dart';
+import 'features/auth/sign_up/sign_up_screen.dart';
+import 'features/community/browse/community_screen.dart';
+import 'features/community/fund/community_fund_screen.dart';
+import 'features/home/home_screen.dart';
+import 'features/lend/lend_screen.dart';
+import 'features/profile/profile_screen.dart';
+import 'features/request/request_screen.dart';
+import 'features/splash/splash_screen.dart';
+import 'features/wallet/wallet_screen.dart';
 import 'ui/app_theme.dart';
 
 Future<void> main() async {
@@ -30,6 +30,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pula Pay',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       initialRoute: AppRoutes.splash,
       onGenerateRoute: (settings) {
