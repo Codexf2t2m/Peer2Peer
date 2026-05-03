@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const primaryBlue = Color(0xFF0A4DFF);
@@ -28,7 +29,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
       ),
-      textTheme: const TextTheme(
+      textTheme: GoogleFonts.geistTextTheme(const TextTheme(
         headlineSmall: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w700,
@@ -49,7 +50,7 @@ class AppTheme {
           fontWeight: FontWeight.w400,
           color: textSecondary,
         ),
-      ),
+      )),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
