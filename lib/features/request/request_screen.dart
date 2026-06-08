@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app_state.dart';
+import '../../../data/providers/data_providers.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../ui/widgets/app_back_button.dart';
 
-class RequestScreen extends StatefulWidget {
+class RequestScreen extends ConsumerStatefulWidget {
   const RequestScreen({super.key});
 
   @override
-  State<RequestScreen> createState() => _RequestScreenState();
+  ConsumerState<RequestScreen> createState() => _RequestScreenState();
 }
 
-class _RequestScreenState extends State<RequestScreen> {
+class _RequestScreenState extends ConsumerState<RequestScreen> {
   final _amountCtrl = TextEditingController(text: '500');
   final _noteCtrl = TextEditingController();
-  bool _sending = false;
 
   @override
   void dispose() {
@@ -33,23 +33,28 @@ class _RequestScreenState extends State<RequestScreen> {
       return;
     }
 
-    setState(() => _sending = true);
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    final result = DemoStore.instance.submitRequest(
-      amount: amount,
-      note: _noteCtrl.text,
-    );
+    final success = await ref.read(loanRequestControllerProvider.notifier).submitRequest(
+          amount: amount,
+          interestRate: 15.0, // Sensible default interest rate
+          durationDays: 30, // Sensible default duration
+          purpose: _noteCtrl.text.trim().isEmpty ? 'Community loan request' : _noteCtrl.text.trim(),
+        );
+
     if (!mounted) return;
 
-    setState(() => _sending = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
-    );
-    Navigator.of(context).pop();
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Request submitted successfully for P$amount.')),
+      );
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final requestState = ref.watch(loanRequestControllerProvider);
+    final isSending = requestState.isLoading;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -69,6 +74,7 @@ class _RequestScreenState extends State<RequestScreen> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: _amountCtrl,
+                    enabled: !isSending,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       prefixText: 'P',
@@ -80,19 +86,27 @@ class _RequestScreenState extends State<RequestScreen> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: _noteCtrl,
+                    enabled: !isSending,
                     decoration: const InputDecoration(hintText: 'What is this for?'),
                   ),
+                  if (requestState.hasError) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      '${requestState.error}',
+                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                    ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _sending ? null : _submit,
-              child: _sending
+              onPressed: isSending ? null : _submit,
+              child: isSending
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Text('Send request'),
             ),

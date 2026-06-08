@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app_routes.dart';
-import '../../../app_state.dart';
+import '../../../data/providers/session_provider.dart';
 import '../../../ui/widgets/app_back_button.dart';
 
-class CreateAccountScreen extends StatefulWidget {
+class CreateAccountScreen extends ConsumerStatefulWidget {
   const CreateAccountScreen({super.key});
 
   @override
-  State<CreateAccountScreen> createState() => _CreateAccountScreenState();
+  ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
 }
 
-class _CreateAccountScreenState extends State<CreateAccountScreen> {
+class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -49,7 +50,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
     setState(() => _loading = true);
     try {
-      final res = await AppSession.instance.signUp(
+      final res = await ref.read(sessionProvider.notifier).signUp(
         email: email,
         password: password,
       );
@@ -93,6 +94,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -103,12 +106,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            const SizedBox(height: 8),
+            Text(
+              'Join PulaPay',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text('Create your profile to start.', style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 24),
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [
+                AutofillHints.newUsername,
                 AutofillHints.email,
-                AutofillHints.username,
               ],
               decoration: const InputDecoration(
                 labelText: 'Email',
@@ -141,11 +154,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               obscureText: _obscure,
               autofillHints: const [AutofillHints.newPassword],
               decoration: const InputDecoration(
-                labelText: 'Confirm password',
+                labelText: 'Confirm Password',
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             FilledButton(
               onPressed: _loading ? null : _createAccount,
               child: _loading
@@ -154,7 +167,19 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Create account'),
+                  : const Text('Create Account'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Already have an account? '),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.login),
+                  child: const Text('Login'),
+                ),
+              ],
             ),
           ],
         ),

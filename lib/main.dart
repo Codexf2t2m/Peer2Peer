@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_state.dart';
 import 'app_routes.dart';
+import 'data/providers/session_provider.dart';
 import 'features/ask_kutlo/ask_kutlo_screen.dart';
 import 'features/auth/reset_password/reset_password_screen.dart';
 import 'features/auth/sign_in/sign_in_screen.dart';
@@ -10,6 +12,12 @@ import 'features/community/browse/community_screen.dart';
 import 'features/community/fund/community_fund_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/lend/lend_screen.dart';
+import 'features/loans/active_loans_screen.dart';
+import 'features/onboarding/bank_connect_screen.dart';
+import 'features/onboarding/credit_assessment_screen.dart';
+import 'features/onboarding/email_verification_screen.dart';
+import 'features/onboarding/kyc_upload_screen.dart';
+import 'features/complaints/complaint_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/request/request_screen.dart';
 import 'features/splash/splash_screen.dart';
@@ -18,9 +26,16 @@ import 'ui/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppSession.instance.bootstrap();
 
-  runApp(const MyApp());
+  final container = ProviderContainer();
+  await container.read(sessionProvider.notifier).bootstrap();
+
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -34,6 +49,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light(),
       initialRoute: AppRoutes.splash,
       onGenerateRoute: (settings) {
+        // Routes that require arguments
         if (settings.name == AppRoutes.communityFund) {
           return MaterialPageRoute<void>(
             builder: (_) => CommunityFundScreen(
@@ -45,17 +61,30 @@ class MyApp extends StatelessWidget {
         return null;
       },
       routes: {
+        // Core
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
         AppRoutes.createAccount: (_) => const CreateAccountScreen(),
         AppRoutes.resetPassword: (_) => const ResetPasswordScreen(),
         AppRoutes.home: (_) => const HomeScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
+
+        // Main features
         AppRoutes.community: (_) => const CommunityScreen(),
         AppRoutes.lend: (_) => const LendScreen(),
         AppRoutes.wallet: (_) => const WalletScreen(),
         AppRoutes.request: (_) => const RequestScreen(),
         AppRoutes.askKutlo: (_) => const AskKutloScreen(),
+
+        // Onboarding flow
+        AppRoutes.emailVerification: (_) => const EmailVerificationScreen(),
+        AppRoutes.bankConnect: (_) => const BankConnectScreen(),
+        AppRoutes.kycUpload: (_) => const KycUploadScreen(),
+        AppRoutes.creditAssessment: (_) => const CreditAssessmentScreen(),
+
+        // Additional feature screens
+        AppRoutes.activeLoans: (_) => const ActiveLoansScreen(),
+        AppRoutes.complaint: (_) => const ComplaintScreen(),
       },
     );
   }

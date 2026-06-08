@@ -3,6 +3,8 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// ── Session ──────────────────────────────────────────────────────────────────
+
 class AppSession extends ChangeNotifier {
   AppSession._();
 
@@ -18,6 +20,13 @@ class AppSession extends ChangeNotifier {
       return Supabase.instance.client.auth.currentUser?.email;
     }
     return _demoEmail;
+  }
+
+  String? get currentUserId {
+    if (_supabaseEnabled) {
+      return Supabase.instance.client.auth.currentUser?.id;
+    }
+    return null;
   }
 
   bool get isSignedIn => currentEmail != null;
@@ -100,12 +109,16 @@ class AppSession extends ChangeNotifier {
   }
 }
 
+// ── Sign-up result ────────────────────────────────────────────────────────────
+
 class SignUpResult {
   const SignUpResult({required this.signedIn, this.message});
 
   final bool signedIn;
   final String? message;
 }
+
+// ── Demo store (fallback / offline mode) ─────────────────────────────────────
 
 class DemoStore extends ChangeNotifier {
   DemoStore._();
@@ -442,6 +455,8 @@ class DemoStore extends ChangeNotifier {
   }
 }
 
+// ── Value types ───────────────────────────────────────────────────────────────
+
 enum TransactionCategory { funding, repayment, wallet }
 
 class FundingResult {
@@ -555,6 +570,8 @@ class AppNotificationItem {
   final String message;
   final DateTime createdAt;
 }
+
+// ── Formatting helpers ────────────────────────────────────────────────────────
 
 String displayNameFromEmail(String? email) {
   if (email == null || email.trim().isEmpty) return 'there';

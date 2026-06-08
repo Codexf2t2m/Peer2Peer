@@ -1,120 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app_routes.dart';
-import '../../../app_state.dart';
+import '../../../data/providers/data_providers.dart';
 import '../../../shared/widgets/bottom_nav_bar.dart';
 import '../../../shared/widgets/empty_state.dart';
 
-class CommunityScreen extends StatefulWidget {
+class CommunityScreen extends ConsumerStatefulWidget {
   const CommunityScreen({super.key});
 
   @override
-  State<CommunityScreen> createState() => _CommunityScreenState();
+  ConsumerState<CommunityScreen> createState() => _CommunityScreenState();
 }
 
-class _CommunityScreenState extends State<CommunityScreen> {
+class _CommunityScreenState extends ConsumerState<CommunityScreen> {
   _CommunityFilter _selectedFilter = _CommunityFilter.all;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: DemoStore.instance,
-      builder: (context, _) {
-        final members = DemoStore.instance.communityMembers.where((member) {
-          return switch (_selectedFilter) {
-            _CommunityFilter.all => true,
-            _CommunityFilter.contacts => member.isContact,
-            _CommunityFilter.highTrust => member.isHighTrust,
-            _CommunityFilter.quickReturn => member.isQuickReturn,
-          };
-        }).toList();
+    final membersAsync = ref.watch(communityMembersProvider);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF7F8FA),
-          body: SafeArea(
-            bottom: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 24, 20, 16),
-                  child: Text(
-                    'Community',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E1E1E),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(communityMembersProvider);
+            await ref.read(communityMembersProvider.future);
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 24, 20, 16),
+                child: Text(
+                  'Community',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E1E1E),
+                  ),
+                ),
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    _buildFilterChip(
+                      label: 'All',
+                      isSelected: _selectedFilter == _CommunityFilter.all,
+                      onTap: () => setState(
+                        () => _selectedFilter = _CommunityFilter.all,
+                      ),
+                    ),
+                    _buildFilterChip(
+                      label: 'Contacts',
+                      isSelected: _selectedFilter == _CommunityFilter.contacts,
+                      onTap: () => setState(
+                        () => _selectedFilter = _CommunityFilter.contacts,
+                      ),
+                    ),
+                    _buildFilterChip(
+                      label: 'High trust',
+                      isSelected: _selectedFilter == _CommunityFilter.highTrust,
+                      onTap: () => setState(
+                        () => _selectedFilter = _CommunityFilter.highTrust,
+                      ),
+                    ),
+                    _buildFilterChip(
+                      label: 'Quick return',
+                      isSelected: _selectedFilter == _CommunityFilter.quickReturn,
+                      onTap: () => setState(
+                        () => _selectedFilter = _CommunityFilter.quickReturn,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: membersAsync.when(
+                  data: (allMembers) {
+                    final members = allMembers.where((member) {
+                      return switch (_selectedFilter) {
+                        _CommunityFilter.all => true,
+                        _CommunityFilter.contacts => member.isContact,
+                        _CommunityFilter.highTrust => member.isHighTrust,
+                        _CommunityFilter.quickReturn => member.isQuickReturn,
+                      };
+                    }).toList();
+
+                    if (members.isEmpty) {
+                      return const EmptyState(
+                        message: 'No borrowers match this filter yet.',
+                      );
+                    }
+
+                    return ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: members.length,
+                      itemBuilder: (context, index) {
+                        final member = members[index];
+                        return _buildFeedCard(
+                          context,
+                          member: member,
+                          primaryButtonText: member.fundedAmount > 0 ? 'Fund More' : 'Fund First',
+                        );
+                      },
+                    );
+                  },
+                  error: (err, _) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Text('Error loading borrowers: $err'),
                     ),
                   ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _buildFilterChip(
-                        label: 'All',
-                        isSelected: _selectedFilter == _CommunityFilter.all,
-                        onTap: () => setState(
-                          () => _selectedFilter = _CommunityFilter.all,
-                        ),
-                      ),
-                      _buildFilterChip(
-                        label: 'Contacts',
-                        isSelected:
-                            _selectedFilter == _CommunityFilter.contacts,
-                        onTap: () => setState(
-                          () => _selectedFilter = _CommunityFilter.contacts,
-                        ),
-                      ),
-                      _buildFilterChip(
-                        label: 'High trust',
-                        isSelected:
-                            _selectedFilter == _CommunityFilter.highTrust,
-                        onTap: () => setState(
-                          () => _selectedFilter = _CommunityFilter.highTrust,
-                        ),
-                      ),
-                      _buildFilterChip(
-                        label: 'Quick return',
-                        isSelected:
-                            _selectedFilter == _CommunityFilter.quickReturn,
-                        onTap: () => setState(
-                          () => _selectedFilter = _CommunityFilter.quickReturn,
-                        ),
-                      ),
-                    ],
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: members.isEmpty
-                      ? const EmptyState(
-                          message: 'No borrowers match this filter yet.',
-                        )
-                      : ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          children: [
-                            ...members.map(
-                              (member) => _buildFeedCard(
-                                context,
-                                member: member,
-                                primaryButtonText: member.fundedAmount > 0
-                                    ? 'Fund More'
-                                    : 'Fund First',
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
-                        ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          bottomNavigationBar:
-              const BottomNavBar(currentRoute: AppRoutes.community),
-        );
-      },
+        ),
+      ),
+      bottomNavigationBar: const BottomNavBar(currentRoute: AppRoutes.community),
     );
   }
 
@@ -135,9 +148,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             decoration: BoxDecoration(
               color: isSelected ? const Color(0xFF0038FF) : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: isSelected
-                  ? null
-                  : Border.all(color: Colors.grey.shade300, width: 0.8),
+              border: isSelected ? null : Border.all(color: Colors.grey.shade300, width: 0.8),
             ),
             child: Text(
               label,
@@ -320,9 +331,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     ),
                     elevation: 0,
                   ),
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).pushNamed(AppRoutes.communityFund, arguments: member.id),
+                  onPressed: () => Navigator.of(context).pushNamed(
+                    AppRoutes.communityFund,
+                    arguments: member.id,
+                  ),
                   child: Text(
                     primaryButtonText,
                     style: const TextStyle(
@@ -343,9 +355,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).pushNamed(AppRoutes.communityFund, arguments: member.id),
+                  onPressed: () => Navigator.of(context).pushNamed(
+                    AppRoutes.communityFund,
+                    arguments: member.id,
+                  ),
                   child: const Text(
                     'View Profile',
                     style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),

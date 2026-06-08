@@ -13,4 +13,14 @@ class AppRoutes {
 
   static const request = '/request';
   static const askKutlo = '/ask-kutlo';
+
+  // Onboarding flow
+  static const emailVerification = '/onboarding/email-verification';
+  static const bankConnect = '/onboarding/bank-connect';
+  static const kycUpload = '/onboarding/kyc-upload';
+  static const creditAssessment = '/onboarding/credit-assessment';
+
+  // Additional feature screens
+  static const activeLoans = '/active-loans';
+  static const complaint = '/complaint';
 }

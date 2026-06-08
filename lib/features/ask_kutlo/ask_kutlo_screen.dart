@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app_state.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../ui/widgets/app_back_button.dart';
 
-class AskKutloScreen extends StatefulWidget {
+class AskKutloScreen extends ConsumerStatefulWidget {
   const AskKutloScreen({super.key});
 
   @override
-  State<AskKutloScreen> createState() => _AskKutloScreenState();
+  ConsumerState<AskKutloScreen> createState() => _AskKutloScreenState();
 }
 
-class _AskKutloScreenState extends State<AskKutloScreen> {
+class _AskKutloScreenState extends ConsumerState<AskKutloScreen> {
   final _ctrl = TextEditingController();
   String? _response;
   bool _loading = false;
@@ -95,24 +96,31 @@ class _AskKutloScreenState extends State<AskKutloScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Text('Ask'),
             ),
             if (_response != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Kutlo says',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                    const Row(
+                      children: [
+                        Icon(Icons.chat_bubble_outline, color: Color(0xFF0038FF), size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Kutlo Advice',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
-                    Text(_response!),
+                    Text(
+                      _response!,
+                      style: const TextStyle(height: 1.4, fontSize: 14),
+                    ),
                   ],
                 ),
               ),
@@ -125,10 +133,7 @@ class _AskKutloScreenState extends State<AskKutloScreen> {
 }
 
 class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _SuggestionChip({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -138,6 +143,10 @@ class _SuggestionChip extends StatelessWidget {
     return ActionChip(
       label: Text(label),
       onPressed: onTap,
+      labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF1E1E1E)),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      backgroundColor: const Color(0xFFF3F4F6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );
   }
 }

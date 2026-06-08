@@ -1,106 +1,132 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../app_routes.dart';
 import '../../../app_state.dart';
+import '../../../data/providers/data_providers.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/bottom_nav_bar.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../ui/app_theme.dart';
 
-class LendScreen extends StatelessWidget {
+class LendScreen extends ConsumerWidget {
   const LendScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: DemoStore.instance,
-      builder: (context, _) {
-        final lendingActivity = DemoStore.instance.transactions
-            .where(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lendingOverviewAsync = ref.watch(lendingOverviewProvider);
+    final transactionsAsync = ref.watch(transactionsProvider);
+
+    final lendingActivity = transactionsAsync.valueOrNull
+            ?.where(
               (transaction) =>
                   transaction.category == TransactionCategory.funding ||
                   transaction.category == TransactionCategory.repayment,
             )
-            .toList();
+            .toList() ??
+        [];
 
-        return Scaffold(
-          appBar: AppBar(
-            titleSpacing: 16,
-            title: Text('Lend', style: Theme.of(context).textTheme.titleMedium),
-            actions: [
-              IconButton(
-                tooltip: 'New request',
-                onPressed: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.request),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedAddSquare,
-                  color: AppTheme.iconColor,
-                  size: 24,
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: 16,
+        title: Text('Lend', style: Theme.of(context).textTheme.titleMedium),
+        actions: [
+          IconButton(
+            tooltip: 'New request',
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.request),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedAddSquare,
+              color: AppTheme.iconColor,
+              size: 24,
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(lendingOverviewProvider);
+            ref.invalidate(transactionsProvider);
+            await ref.read(lendingOverviewProvider.future);
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+            children: [
+              const SectionTitle(title: 'Your lending'),
+              const SizedBox(height: 12),
+              AppCard(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Outstanding',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          lendingOverviewAsync.maybeWhen(
+                            data: (overview) => formatPula(overview['total_lent'] ?? 0),
+                            orElse: () => 'P0',
+                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ],
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context)
+                          .pushReplacementNamed(AppRoutes.community),
+                      child: const Text('Lend now'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              SectionTitle(
+                title: 'Active loans',
+                trailing: TextButton(
+                  onPressed: () => _showLoanHistory(context, lendingActivity),
+                  child: const Text('View all'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              transactionsAsync.when(
+                data: (_) {
+                  if (lendingActivity.isEmpty) {
+                    return const AppCard(child: Text('No lending activity yet.'));
+                  }
+                  return Column(
+                    children: lendingActivity
+                        .take(4)
+                        .map(
+                          (transaction) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _LoanTile(transaction: transaction),
+                          ),
+                        )
+                        .toList(),
+                  );
+                },
+                error: (err, _) => AppCard(child: Text('Error loading activity: $err')),
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               ),
             ],
           ),
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-              children: [
-                const SectionTitle(title: 'Your lending'),
-                const SizedBox(height: 12),
-                AppCard(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Outstanding',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            DemoStore.instance.totalLentText,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
-                        ],
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(
-                          context,
-                        ).pushReplacementNamed(AppRoutes.community),
-                        child: const Text('Lend now'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                SectionTitle(
-                  title: 'Active loans',
-                  trailing: TextButton(
-                    onPressed: () => _showLoanHistory(context, lendingActivity),
-                    child: const Text('View all'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (lendingActivity.isEmpty)
-                  const AppCard(child: Text('No lending activity yet.'))
-                else
-                  ...lendingActivity
-                      .take(4)
-                      .map(
-                        (transaction) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _LoanTile(transaction: transaction),
-                        ),
-                      ),
-              ],
-            ),
-          ),
-          bottomNavigationBar: const BottomNavBar(currentRoute: AppRoutes.lend),
-        );
-      },
+        ),
+      ),
+      bottomNavigationBar: const BottomNavBar(currentRoute: AppRoutes.lend),
     );
   }
 
@@ -123,8 +149,8 @@ class LendScreen extends StatelessWidget {
                 Text(
                   'All lending activity',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -182,9 +208,10 @@ class _LoanTile extends StatelessWidget {
               children: [
                 Text(
                   transaction.title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -200,9 +227,9 @@ class _LoanTile extends StatelessWidget {
               Text(
                 transaction.amountText,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: transaction.amountColor,
-                ),
+                      fontWeight: FontWeight.w900,
+                      color: transaction.amountColor,
+                    ),
               ),
               const SizedBox(height: 2),
               Text(

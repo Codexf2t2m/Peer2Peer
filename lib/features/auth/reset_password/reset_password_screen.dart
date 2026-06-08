@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../app_state.dart';
+import '../../../data/providers/session_provider.dart';
 import '../../../ui/widgets/app_back_button.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
+class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _emailController = TextEditingController();
   bool _loading = false;
 
@@ -32,12 +33,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => _loading = true);
     try {
-      await AppSession.instance.sendPasswordReset(email);
+      final session = ref.read(sessionProvider);
+      await ref.read(sessionProvider.notifier).sendPasswordReset(email);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppSession.instance.supabaseEnabled
+            session.supabaseEnabled
                 ? 'Password reset email sent.'
                 : 'Demo mode: reset instructions simulated.',
           ),
