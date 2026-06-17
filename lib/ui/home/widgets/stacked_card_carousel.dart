@@ -1,9 +1,8 @@
+// lib/ui/home/widgets/stacked_card_carousel.dart
+// Unchanged — self-contained StatefulWidget with no provider dependencies.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-void main() => runApp(const MaterialApp(home: Scaffold(body: Center(child: StackedCardCarousel()))));
-
-// ── Data model ───────────────────────────────────────────────────────────────
 
 class ShowcaseCardData {
   const ShowcaseCardData({
@@ -50,13 +49,12 @@ const sampleCards = [
   ),
 ];
 
-// ── Satisfying Carousel Logic ────────────────────────────────────────────────
-
 class StackedCardCarousel extends StatefulWidget {
   const StackedCardCarousel({super.key});
 
   @override
-  State<StackedCardCarousel> createState() => _StackedCardCarouselState();
+  State<StackedCardCarousel> createState() =>
+      _StackedCardCarouselState();
 }
 
 class _StackedCardCarouselState extends State<StackedCardCarousel>
@@ -74,6 +72,12 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
     );
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   void _onHorizontalDragUpdate(DragUpdateDetails details) {
     setState(() => _dragOffset += details.delta.dx);
   }
@@ -82,12 +86,13 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
     final screenWidth = MediaQuery.of(context).size.width;
     final velocity = details.primaryVelocity ?? 0;
 
-    // Trigger threshold for swiping
-    if (_dragOffset.abs() > screenWidth * 0.3 || velocity.abs() > 600) {
+    if (_dragOffset.abs() > screenWidth * 0.3 ||
+        velocity.abs() > 600) {
       if (_dragOffset > 0 && _currentIndex > 0) {
-        _swipeTo( -1); // Prev
-      } else if (_dragOffset < 0 && _currentIndex < sampleCards.length - 1) {
-        _swipeTo(1); // Next
+        _swipeTo(-1);
+      } else if (_dragOffset < 0 &&
+          _currentIndex < sampleCards.length - 1) {
+        _swipeTo(1);
       } else {
         _reset();
       }
@@ -98,13 +103,18 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
 
   void _swipeTo(int direction) {
     HapticFeedback.lightImpact();
-    final end = direction == 1 ? -MediaQuery.of(context).size.width : MediaQuery.of(context).size.width;
-    
-    final animation = Tween<double>(begin: _dragOffset, end: end).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    final end = direction == 1
+        ? -MediaQuery.of(context).size.width
+        : MediaQuery.of(context).size.width;
+
+    final animation =
+        Tween<double>(begin: _dragOffset, end: end).animate(
+      CurvedAnimation(
+          parent: _controller, curve: Curves.easeOutCubic),
     );
 
-    animation.addListener(() => setState(() => _dragOffset = animation.value));
+    animation.addListener(
+        () => setState(() => _dragOffset = animation.value));
 
     _controller.forward(from: 0).then((_) {
       setState(() {
@@ -115,18 +125,21 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
   }
 
   void _reset() {
-    final animation = Tween<double>(begin: _dragOffset, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    final animation =
+        Tween<double>(begin: _dragOffset, end: 0).animate(
+      CurvedAnimation(
+          parent: _controller, curve: Curves.elasticOut),
     );
-    animation.addListener(() => setState(() => _dragOffset = animation.value));
+    animation.addListener(
+        () => setState(() => _dragOffset = animation.value));
     _controller.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    // Calculate 0.0 to 1.0 progress of the current swipe
-    double progress = (_dragOffset.abs() / screenWidth).clamp(0.0, 1.0);
+    final progress =
+        (_dragOffset.abs() / screenWidth).clamp(0.0, 1.0);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -136,21 +149,24 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
           onHorizontalDragEnd: _onHorizontalDragEnd,
           child: Container(
             height: 250,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20),
             child: Stack(
               alignment: Alignment.center,
               clipBehavior: Clip.none,
               children: [
-                // Back Card (The one peeking below)
                 if (_currentIndex + 1 < sampleCards.length)
-                  _buildBackCard(sampleCards[_currentIndex + 1], progress),
-
-                // Front Card (The one being dragged)
+                  _buildBackCard(
+                      sampleCards[_currentIndex + 1],
+                      progress),
                 Transform.translate(
-                  offset: Offset(_dragOffset, _dragOffset.abs() * -0.05),
+                  offset: Offset(
+                      _dragOffset, _dragOffset.abs() * -0.05),
                   child: Transform.rotate(
-                    angle: (_dragOffset / screenWidth) * 0.1,
-                    child: CreditCardWidget(card: sampleCards[_currentIndex]),
+                    angle:
+                        (_dragOffset / screenWidth) * 0.1,
+                    child: CreditCardWidget(
+                        card: sampleCards[_currentIndex]),
                   ),
                 ),
               ],
@@ -164,7 +180,6 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
   }
 
   Widget _buildBackCard(ShowcaseCardData card, double progress) {
-    // Back card scales up and moves up as you swipe
     return Transform.translate(
       offset: Offset(0, 15 * (1 - progress)),
       child: Transform.scale(
@@ -181,14 +196,16 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(sampleCards.length, (i) {
-        bool active = i == _currentIndex;
+        final active = i == _currentIndex;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(horizontal: 4),
           height: 8,
           width: active ? 24 : 8,
           decoration: BoxDecoration(
-            color: active ? Colors.grey[700] : Colors.grey[300],
+            color: active
+                ? Colors.grey[700]
+                : Colors.grey[300],
             borderRadius: BorderRadius.circular(10),
           ),
         );
@@ -197,32 +214,30 @@ class _StackedCardCarouselState extends State<StackedCardCarousel>
   }
 }
 
-// ── The Card UI ───────────────────────────────────────────────────────────────
-
 class CreditCardWidget extends StatelessWidget {
-  final ShowcaseCardData card;
   const CreditCardWidget({super.key, required this.card});
+
+  final ShowcaseCardData card;
 
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 1.58, // Standard credit card ratio
+      aspectRatio: 1.58,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
-            )
+            ),
           ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Stack(
             children: [
-              // 1. Background Color
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -232,8 +247,6 @@ class CreditCardWidget extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // 2. The diagonal sheen (reflection)
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -242,36 +255,46 @@ class CreditCardWidget extends StatelessWidget {
                       end: Alignment.topRight,
                       stops: const [0.3, 0.5, 0.7],
                       colors: [
-                        Colors.white.withOpacity(0),
-                        Colors.white.withOpacity(0.06),
-                        Colors.white.withOpacity(0),
+                        Colors.white.withValues(alpha: 0),
+                        Colors.white
+                            .withValues(alpha: 0.06),
+                        Colors.white.withValues(alpha: 0),
                       ],
                     ),
                   ),
                 ),
               ),
-
-              // 3. Card Content
               Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(24),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
-                    // Top Row: FNB + Brand
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
                       children: [
                         Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
                             Text(
                               card.bankName,
-                              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             Text(
                               card.label,
-                              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16),
+                              style: TextStyle(
+                                color: Colors.white
+                                    .withValues(alpha: 0.7),
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
@@ -290,24 +313,36 @@ class CreditCardWidget extends StatelessWidget {
                             const SizedBox(height: 10),
                             const EMVChip(),
                           ],
-                        )
+                        ),
                       ],
                     ),
                     const Spacer(),
-                    // Bottom Row: Balance + Number
                     Text(
-                      "Balance",
-                      style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                      'Balance',
+                      style: TextStyle(
+                        color: Colors.white
+                            .withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Text(
                           card.balance,
-                          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(Icons.help_outline, size: 14, color: Colors.white.withOpacity(0.4)),
+                        Icon(
+                          Icons.help_outline,
+                          size: 14,
+                          color: Colors.white
+                              .withValues(alpha: 0.4),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -330,8 +365,6 @@ class CreditCardWidget extends StatelessWidget {
     );
   }
 }
-
-// ── Realistic Chip ────────────────────────────────────────────────────────────
 
 class EMVChip extends StatelessWidget {
   const EMVChip({super.key});
@@ -362,11 +395,13 @@ class EMVChip extends StatelessWidget {
           ),
           Align(
             alignment: Alignment.center,
-            child: Container(width: 0.5, height: 30, color: Colors.black12),
+            child: Container(
+                width: 0.5, height: 30, color: Colors.black12),
           ),
           Align(
             alignment: Alignment.center,
-            child: Container(width: 40, height: 0.5, color: Colors.black12),
+            child: Container(
+                width: 40, height: 0.5, color: Colors.black12),
           ),
         ],
       ),

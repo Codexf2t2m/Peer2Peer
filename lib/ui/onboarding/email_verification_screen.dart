@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app_routes.dart';
 import '../../../data/providers/data_providers.dart';
 import '../../../data/providers/session_provider.dart';
+import '../../../data/providers/supabase_providers.dart';
 
 /// Step 1 of onboarding: email verification gate.
 ///
@@ -83,7 +85,7 @@ class _EmailVerificationScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Step indicator
-              _OnboardingStepIndicator(currentStep: 0),
+              const OnboardingStepIndicator(currentStep: 0),
               const SizedBox(height: 40),
 
               // Icon
@@ -241,8 +243,8 @@ class _EmailVerificationScreenState
 
 // ── Shared step indicator ─────────────────────────────────────────────────────
 
-class _OnboardingStepIndicator extends StatelessWidget {
-  const _OnboardingStepIndicator({required this.currentStep});
+class OnboardingStepIndicator extends StatelessWidget {
+  const OnboardingStepIndicator({required this.currentStep});
 
   final int currentStep;
 

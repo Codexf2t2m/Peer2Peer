@@ -1,3 +1,7 @@
+// lib/ui/home/widgets/loan_performance_card.dart
+// Unchanged — kept as-is. Now receives live data from HomeOverviewModel
+// instead of hardcoded constants.
+
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -26,10 +30,11 @@ class LoanPerformanceCard extends StatelessWidget {
             children: [
               Text(
                 'Loan Performance',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                style:
+                    Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
               ),
               const Spacer(),
               const HugeIcon(
@@ -40,29 +45,34 @@ class LoanPerformanceCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 'P$monthlyDelta this month',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF202223),
-                  fontWeight: FontWeight.w500,
-                ),
+                style:
+                    Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFF202223),
+                          fontWeight: FontWeight.w500,
+                        ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           Text(
             '$ratePercent%',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontSize: 44,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1.4,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.4,
+                ),
           ),
           const SizedBox(height: 2),
           Text(
             'Repayment rate',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
+            style:
+                Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
           ),
         ],
       ),

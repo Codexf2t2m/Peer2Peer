@@ -1,20 +1,28 @@
+
+// UC: Reset Password (Forgot Password)
+//
+// Architecture
+// • ConsumerStatefulWidget — local state: controller only.
+// • ref.listen handles ResetPasswordSuccess → pop + snackbar.
+// • Inline error replaces snackbar validation.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../data/providers/session_provider.dart';
 import '../../../widgets/app_back_button.dart';
+import '../view_models/reset_password_view_model.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
+class _ResetPasswordScreenState
+    extends ConsumerState<ResetPasswordScreen> {
   final _emailController = TextEditingController();
-  bool _loading = false;
 
   @override
   void dispose() {
@@ -22,61 +30,60 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     super.dispose();
   }
 
-  Future<void> _sendReset() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your email.')),
-      );
-      return;
-    }
-
-    setState(() => _loading = true);
-    try {
-      final session = ref.read(sessionProvider);
-      await ref.read(sessionProvider.notifier).sendPasswordReset(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            session.supabaseEnabled
-                ? 'Password reset email sent.'
-                : 'Demo mode: reset instructions simulated.',
-          ),
-        ),
-      );
-      Navigator.of(context).pop();
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not send reset email. Try again.')),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    await ref
+        .read(resetPasswordViewModelProvider.notifier)
+        .submit(_emailController.text);
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(resetPasswordViewModelProvider, (_, next) {
+      if (next is ResetPasswordSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Password reset email sent.')),
+        );
+        Navigator.of(context).pop();
+      }
+    });
+
+    final uiState = ref.watch(resetPasswordViewModelProvider);
+    final isLoading = uiState.isLoading;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: Navigator.of(context).canPop() ? const AppBackButton() : null,
+        leading: Navigator.of(context).canPop()
+            ? const AppBackButton()
+            : null,
         title: const Text('Reset password'),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text(
-              'Enter your email and we’ll send a reset link.',
+            const SizedBox(height: 8),
+            Text(
+              'Forgot your password?',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
+            Text(
+              'Enter your email and we\'ll send a reset link.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Email 
             TextField(
               controller: _emailController,
+              enabled: !isLoading,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               decoration: const InputDecoration(
@@ -84,14 +91,28 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
+
+            // Inline error 
+            if (uiState.hasError) ...[
+              const SizedBox(height: 10),
+              Text(
+                uiState.errorMessage ?? '',
+                style: const TextStyle(
+                    color: Color(0xFFDC2626), fontSize: 13),
+              ),
+            ],
+
             const SizedBox(height: 16),
+
+            // Submit 
             FilledButton(
-              onPressed: _loading ? null : _sendReset,
-              child: _loading
+              onPressed: isLoading ? null : _submit,
+              child: isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2),
                     )
                   : const Text('Send reset link'),
             ),

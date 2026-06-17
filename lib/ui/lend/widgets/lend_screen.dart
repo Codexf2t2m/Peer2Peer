@@ -1,31 +1,25 @@
+// UC: View Lending Portfolio + Fund Community Loan entry point.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../app_routes.dart';
-import '../../../../app_state.dart';
-import '../../../../data/providers/data_providers.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/bottom_nav_bar.dart';
 import '../../../../shared/widgets/section_title.dart';
 import '../../../../ui/app_theme.dart';
+import '../view_models/lend_view_model.dart';
+import 'lending_activity_sheet.dart';
+import 'lending_activity_tile.dart';
+import 'lending_portfolio_card.dart';
 
 class LendScreen extends ConsumerWidget {
   const LendScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lendingOverviewAsync = ref.watch(lendingOverviewProvider);
-    final transactionsAsync = ref.watch(transactionsProvider);
-
-    final lendingActivity = transactionsAsync.valueOrNull
-            ?.where(
-              (transaction) =>
-                  transaction.category == TransactionCategory.funding ||
-                  transaction.category == TransactionCategory.repayment,
-            )
-            .toList() ??
-        [];
+    final uiState = ref.watch(lendViewModelProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -33,8 +27,9 @@ class LendScreen extends ConsumerWidget {
         title: Text('Lend', style: Theme.of(context).textTheme.titleMedium),
         actions: [
           IconButton(
-            tooltip: 'New request',
-            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.request),
+            tooltip: 'Browse community loans',
+            onPressed: () =>
+                Navigator.of(context).pushNamed(AppRoutes.community),
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedAddSquare,
               color: AppTheme.iconColor,
@@ -45,201 +40,91 @@ class LendScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(lendingOverviewProvider);
-            ref.invalidate(transactionsProvider);
-            await ref.read(lendingOverviewProvider.future);
-          },
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-            children: [
-              const SectionTitle(title: 'Your lending'),
-              const SizedBox(height: 12),
-              AppCard(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Outstanding',
-                          style: Theme.of(context).textTheme.bodySmall,
+          onRefresh: () =>
+              ref.read(lendViewModelProvider.notifier).refresh(),
+          child: uiState.when(
+            // Loading 
+            loading: () => const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+
+            // Error 
+            error: (e, _) => ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              children: [
+                AppCard(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: Color(0xFFEF4444)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          e.toString().replaceFirst('Exception: ', ''),
+                          style: const TextStyle(
+                              color: Color(0xFFEF4444), fontSize: 13),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          lendingOverviewAsync.maybeWhen(
-                            data: (overview) => formatPula(overview['total_lent'] ?? 0),
-                            orElse: () => 'P0',
-                          ),
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w900),
-                        ),
-                      ],
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.of(context)
-                          .pushReplacementNamed(AppRoutes.community),
-                      child: const Text('Lend now'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              SectionTitle(
-                title: 'Active loans',
-                trailing: TextButton(
-                  onPressed: () => _showLoanHistory(context, lendingActivity),
-                  child: const Text('View all'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              transactionsAsync.when(
-                data: (_) {
-                  if (lendingActivity.isEmpty) {
-                    return const AppCard(child: Text('No lending activity yet.'));
-                  }
-                  return Column(
-                    children: lendingActivity
-                        .take(4)
-                        .map(
-                          (transaction) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _LoanTile(transaction: transaction),
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
-                error: (err, _) => AppCard(child: Text('Error loading activity: $err')),
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: CircularProgressIndicator(),
+                      ),
+                      TextButton(
+                        onPressed: () => ref
+                            .read(lendViewModelProvider.notifier)
+                            .refresh(),
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
+
+            //  Data 
+            data: (state) => ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding:
+                  const EdgeInsets.fromLTRB(16, 12, 16, 18),
+              children: [
+                //  Portfolio summary 
+                const SectionTitle(title: 'Your lending'),
+                const SizedBox(height: 12),
+                LendingPortfolioCard(overview: state.overview),
+
+                const SizedBox(height: 18),
+
+                //  Recent activity 
+                SectionTitle(
+                  title: 'Active loans',
+                  trailing: TextButton(
+                    onPressed: state.hasActivity
+                        ? () => LendingActivitySheet.show(
+                              context,
+                              activities: state.allActivity,
+                            )
+                        : null,
+                    child: const Text('View all'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                if (!state.hasActivity)
+                  const AppCard(
+                    child: Text('No lending activity yet.'),
+                  )
+                else
+                  ...state.recentActivity.map(
+                    (activity) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: LendingActivityTile(activity: activity),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentRoute: AppRoutes.lend),
-    );
-  }
-
-  void _showLoanHistory(
-    BuildContext context,
-    List<AppTransaction> transactions,
-  ) {
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: SizedBox(
-            height: 420,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'All lending activity',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: transactions.isEmpty
-                      ? const Center(child: Text('No lending activity yet.'))
-                      : ListView.builder(
-                          itemCount: transactions.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _LoanTile(
-                                transaction: transactions[index],
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _LoanTile extends StatelessWidget {
-  const _LoanTile({required this.transaction});
-
-  final AppTransaction transaction;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF3F4F6),
-              shape: BoxShape.circle,
-            ),
-            child: const HugeIcon(
-              icon: HugeIcons.strokeRoundedUser,
-              color: AppTheme.textSecondary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  transaction.subtitle,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                transaction.amountText,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: transaction.amountColor,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                transaction.isCredit ? 'Repaid' : 'Active',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ],
-      ),
+      bottomNavigationBar:
+          const BottomNavBar(currentRoute: AppRoutes.lend),
     );
   }
 }

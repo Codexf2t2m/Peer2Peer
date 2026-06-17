@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app_routes.dart';
 import '../../../data/providers/data_providers.dart';
+import '../../../data/providers/session_provider.dart';
 import '../../../data/providers/supabase_providers.dart';
-import 'email_verification_screen.dart' show _OnboardingStepIndicator;
+import 'email_verification_screen.dart' show OnboardingStepIndicator;
 
 /// Step 3 of onboarding: upload a KYC identity document.
 ///
@@ -95,7 +96,7 @@ class _KycUploadScreenState extends ConsumerState<KycUploadScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _OnboardingStepIndicator(currentStep: 2),
+              const OnboardingStepIndicator(currentStep: 2),
               const SizedBox(height: 40),
 
               Container(

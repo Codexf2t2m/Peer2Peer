@@ -1,25 +1,32 @@
+// lib/ui/home/widgets/recent_transactions_card.dart
+//
+// Replaces AppTransaction with WalletTransactionModel.
+
 import 'package:flutter/material.dart';
 
-import '../../../app_state.dart';
-import '../../../shared/widgets/transaction_tile.dart';
+import '../../../../data/models/wallet_transaction_model.dart';
+import '../../../../shared/widgets/transaction_tile.dart';
 
 class RecentTransactionsCard extends StatelessWidget {
-  const RecentTransactionsCard({super.key, required this.transactions});
+  const RecentTransactionsCard({
+    super.key,
+    required this.transactions,
+  });
 
-  final List<AppTransaction> transactions;
+  final List<WalletTransactionModel> transactions;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: List.generate(transactions.length, (index) {
-        final transaction = transactions[index];
         return Column(
           children: [
-            TransactionTile(transaction: transaction),
+            TransactionTile(transaction: transactions[index]),
             if (index != transactions.length - 1)
               const Padding(
                 padding: EdgeInsets.only(left: 54),
-                child: Divider(height: 20, color: Color(0xFFE3E6EA)),
+                child: Divider(
+                    height: 20, color: Color(0xFFE3E6EA)),
               ),
           ],
         );

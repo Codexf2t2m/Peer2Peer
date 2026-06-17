@@ -1,3 +1,9 @@
+// lib/data/models/loan_contribution_model.dart
+
+/// Represents a lender's funding contribution toward a loan request.
+///
+/// Maps to the `loan_contributions` table, optionally joined with
+/// `loan_requests` and the borrower `profiles`.
 class LoanContributionModel {
   const LoanContributionModel({
     required this.id,
@@ -8,7 +14,6 @@ class LoanContributionModel {
     required this.platformCut,
     required this.status,
     required this.createdAt,
-    // Joined fields
     this.borrowerName,
     this.loanPurpose,
     this.loanDueDate,
@@ -17,10 +22,18 @@ class LoanContributionModel {
   final String id;
   final String loanRequestId;
   final String lenderId;
+
   final double amountContributed;
+
+  /// The total amount the lender expects back (principal + interest share).
   final double expectedReturn;
+
+  /// Platform fee already deducted from the lender's return.
   final double platformCut;
-  final String status; // 'pending' | 'funded' | 'repaying' | 'completed'
+
+  /// 'pending' | 'funded' | 'repaying' | 'completed'
+  final String status;
+
   final DateTime createdAt;
 
   // Joined
@@ -28,7 +41,13 @@ class LoanContributionModel {
   final String? loanPurpose;
   final DateTime? loanDueDate;
 
-  double get netProfit => expectedReturn - amountContributed - platformCut;
+  // ── Computed properties ───────────────────────────────────────────────────
+
+  /// Net profit after the platform fee.
+  double get netProfit =>
+      expectedReturn - amountContributed - platformCut;
+
+  // ── Serialisation ─────────────────────────────────────────────────────────
 
   factory LoanContributionModel.fromJson(Map<String, dynamic> json) {
     final loanRequest =
@@ -40,7 +59,8 @@ class LoanContributionModel {
       id: json['id'] as String,
       loanRequestId: json['loan_request_id'] as String,
       lenderId: json['lender_id'] as String,
-      amountContributed: (json['amount_contributed'] as num).toDouble(),
+      amountContributed:
+          (json['amount_contributed'] as num).toDouble(),
       expectedReturn: (json['expected_return'] as num).toDouble(),
       platformCut: (json['platform_cut'] as num).toDouble(),
       status: json['status'] as String? ?? 'pending',
@@ -50,4 +70,14 @@ class LoanContributionModel {
       loanPurpose: loanRequest?['purpose'] as String?,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoanContributionModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

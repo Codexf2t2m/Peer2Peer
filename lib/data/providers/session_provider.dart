@@ -3,7 +3,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app_state.dart' show SignUpResult;
-import 'supabase_providers.dart';
 
 class SessionState {
   final bool supabaseEnabled;
@@ -42,11 +41,12 @@ class SessionState {
 }
 
 class SessionNotifier extends StateNotifier<SessionState> {
-  SessionNotifier(this._client)
+  SessionNotifier()
       : super(SessionState(supabaseEnabled: false, isSignedIn: false));
 
-  final SupabaseClient _client;
   String? _demoEmail;
+
+  SupabaseClient get _client => Supabase.instance.client;
 
   Future<void> bootstrap() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -67,6 +67,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
     }
 
     try {
+      await Supabase.initialize(url: url, anonKey: anonKey);
       final currentUser = _client.auth.currentUser;
       state = SessionState(
         supabaseEnabled: true,
@@ -185,6 +186,5 @@ class SessionNotifier extends StateNotifier<SessionState> {
 }
 
 final sessionProvider = StateNotifierProvider<SessionNotifier, SessionState>((ref) {
-  final client = ref.watch(supabaseClientProvider);
-  return SessionNotifier(client);
+  return SessionNotifier();
 });

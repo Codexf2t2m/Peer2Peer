@@ -1,11 +1,19 @@
+
+// UC: Login / Sign In
+//
+// Architecture
+// • ConsumerStatefulWidget — local state: controllers + _obscure only.
+// • ref.listen handles LoginSuccess → navigate home.
+// • No Supabase imports, no AuthException, no setState for loading.
+// • Inline error replaces snackbar validation.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../app_routes.dart';
-import '../../../../data/providers/session_provider.dart';
 import '../../../widgets/app_back_button.dart';
+import '../view_models/sign_in_view_model.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -17,8 +25,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  bool _loading = false;
   bool _obscure = true;
 
   @override
@@ -28,48 +34,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _login() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter email and password.')),
-      );
-      return;
-    }
-
-    setState(() => _loading = true);
-    try {
-      await ref.read(sessionProvider.notifier).signIn(email: email, password: password);
-
-      if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please try again.')),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    await ref.read(loginViewModelProvider.notifier).submit(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(loginViewModelProvider, (_, next) {
+      if (next is LoginSuccess) {
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+      }
+    });
+
+    final uiState = ref.watch(loginViewModelProvider);
+    final isLoading = uiState.isLoading;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: Navigator.of(context).canPop() ? const AppBackButton() : null,
+        leading: Navigator.of(context).canPop()
+            ? const AppBackButton()
+            : null,
         title: const Text('Login'),
       ),
       body: SafeArea(
@@ -79,15 +70,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 8),
             Text(
               'Welcome back',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
-            Text('Log in to continue.', style: theme.textTheme.bodyMedium),
+            Text('Log in to continue.',
+                style: theme.textTheme.bodyMedium),
+
             const SizedBox(height: 24),
+
+            // Email 
             TextField(
               controller: _emailController,
+              enabled: !isLoading,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [
                 AutofillHints.username,
@@ -98,16 +93,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
+
             const SizedBox(height: 12),
+
+            // Password 
             TextField(
               controller: _passwordController,
+              enabled: !isLoading,
               obscureText: _obscure,
               autofillHints: const [AutofillHints.password],
               decoration: InputDecoration(
                 labelText: 'Password',
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
-                  onPressed: () => setState(() => _obscure = !_obscure),
+                  onPressed: () =>
+                      setState(() => _obscure = !_obscure),
                   icon: HugeIcon(
                     icon: _obscure
                         ? HugeIcons.strokeRoundedView
@@ -118,31 +118,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
+
+            // Inline error 
+            if (uiState.hasError) ...[
+              const SizedBox(height: 10),
+              Text(
+                uiState.errorMessage ?? '',
+                style: const TextStyle(
+                    color: Color(0xFFDC2626), fontSize: 13),
+              ),
+            ],
+
             const SizedBox(height: 16),
+
+            // Submit 
             FilledButton(
-              onPressed: _loading ? null : _login,
-              child: _loading
+              onPressed: isLoading ? null : _submit,
+              child: isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2),
                     )
                   : const Text('Login'),
             ),
+
             const SizedBox(height: 8),
+
             TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.resetPassword),
+              onPressed: isLoading
+                  ? null
+                  : () => Navigator.of(context)
+                      .pushNamed(AppRoutes.resetPassword),
               child: const Text('Forgot password?'),
             ),
+
             const SizedBox(height: 8),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text("Don't have an account? "),
                 TextButton(
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(AppRoutes.createAccount),
+                  onPressed: isLoading
+                      ? null
+                      : () => Navigator.of(context)
+                          .pushNamed(AppRoutes.createAccount),
                   child: const Text('Create one'),
                 ),
               ],

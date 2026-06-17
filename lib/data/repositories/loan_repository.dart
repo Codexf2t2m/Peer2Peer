@@ -1,23 +1,33 @@
+// lib/data/repositories/loan_repository.dart
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/active_loan_model.dart';
 import '../models/loan_contribution_model.dart';
 import '../models/loan_request_model.dart';
 
+/// Single source of truth for all loan-related data operations.
+///
+/// Callers receive strongly-typed domain models; all Supabase / network
+/// details stay behind this boundary.  View models only talk to this
+/// repository — they never import Supabase directly.
+///
+/// Error handling: every method wraps Postgres and generic errors and
+/// rethrows them as plain [Exception]s so the UI layer can display them
+/// without depending on Supabase types.
 class LoanRepository {
-  final SupabaseClient _db;
-
   LoanRepository(this._db);
+
+  final SupabaseClient _db;
 
   String? get _uid => _db.auth.currentUser?.id;
 
   // ── Community feed ─────────────────────────────────────────────────────────
 
-  /// Fetches active community loan requests visible to any authenticated user.
-  /// Joins the borrower's public profile fields (name, reputation_score).
+  /// Returns all active community loan requests with borrower profile data.
   Future<List<LoanRequestModel>> fetchActiveCommunityRequests() async {
     try {
-      final List<Map<String, dynamic>> data = await _db
+      final data = await _db
           .from('loan_requests')
           .select(
             'id, borrower_id, request_type, amount_requested, interest_rate, '
@@ -28,18 +38,23 @@ class LoanRepository {
           .eq('status', 'active')
           .order('created_at', ascending: false);
 
-      return data.map((row) => LoanRequestModel.fromJson(row)).toList();
+      return (data as List)
+          .map((row) => LoanRequestModel.fromJson(
+              Map<String, dynamic>.from(row as Map)))
+          .toList();
     } on PostgrestException catch (e) {
-      throw Exception('Failed to fetch community loan requests: ${e.message}');
+      throw Exception(
+          'Failed to fetch community loan requests: ${e.message}');
     } catch (e) {
-      throw Exception('An unexpected network error occurred while loading community requests.');
+      throw Exception(
+          'An unexpected error occurred while loading community requests.');
     }
   }
 
-  /// Fetches a single loan request by ID with borrower profile data.
+  /// Returns a single loan request by ID, or null if not found.
   Future<LoanRequestModel?> fetchLoanRequest(String id) async {
     try {
-      final Map<String, dynamic>? data = await _db
+      final data = await _db
           .from('loan_requests')
           .select(
             'id, borrower_id, request_type, amount_requested, interest_rate, '
@@ -49,36 +64,45 @@ class LoanRepository {
           .eq('id', id)
           .maybeSingle();
 
-      return data == null ? null : LoanRequestModel.fromJson(data);
+      return data == null
+          ? null
+          : LoanRequestModel.fromJson(
+              Map<String, dynamic>.from(data));
     } on PostgrestException catch (e) {
       throw Exception('Failed to fetch loan request: ${e.message}');
     } catch (e) {
-      throw Exception('An unexpected network error occurred while loading the request.');
+      throw Exception(
+          'An unexpected error occurred while loading the request.');
     }
   }
 
   // ── Borrower: my loan requests ─────────────────────────────────────────────
 
+  /// Returns all loan requests submitted by the current user.
   Future<List<LoanRequestModel>> fetchMyLoanRequests() async {
     final uid = _uid;
     if (uid == null) return [];
 
     try {
-      final List<Map<String, dynamic>> data = await _db
+      final data = await _db
           .from('loan_requests')
           .select()
           .eq('borrower_id', uid)
           .order('created_at', ascending: false);
 
-      return data.map((row) => LoanRequestModel.fromJson(row)).toList();
+      return (data as List)
+          .map((row) => LoanRequestModel.fromJson(
+              Map<String, dynamic>.from(row as Map)))
+          .toList();
     } on PostgrestException catch (e) {
-      throw Exception('Failed to fetch your loan requests: ${e.message}');
+      throw Exception(
+          'Failed to fetch your loan requests: ${e.message}');
     } catch (e) {
-      throw Exception('An unexpected network error occurred.');
+      throw Exception('An unexpected error occurred.');
     }
   }
 
-  /// Submits a new community or direct loan request.
+  /// Submits a new loan request and returns the created record.
   Future<LoanRequestModel> submitLoanRequest({
     required double amountRequested,
     required double interestRate,
@@ -86,15 +110,15 @@ class LoanRepository {
     String? purpose,
     String requestType = 'community',
     String? targetLenderId,
-    String initialStatus = 'active',
   }) async {
     final uid = _uid;
     if (uid == null) {
-      throw Exception('User must be logged in to submit a loan request.');
+      throw Exception(
+          'You must be signed in to submit a loan request.');
     }
 
     try {
-      final Map<String, dynamic> data = await _db
+      final data = await _db
           .from('loan_requests')
           .insert({
             'borrower_id': uid,
@@ -103,50 +127,59 @@ class LoanRepository {
             'interest_rate': interestRate,
             'duration_days': durationDays,
             'purpose': purpose,
-            'status': initialStatus,
+            'status': 'active',
             'funded_amount': 0.0,
-            if (targetLenderId != null) 'target_lender_id': targetLenderId,
+            if (targetLenderId != null)
+              'target_lender_id': targetLenderId,
           })
           .select()
           .single();
 
-      return LoanRequestModel.fromJson(data);
+      return LoanRequestModel.fromJson(
+          Map<String, dynamic>.from(data));
     } on PostgrestException catch (e) {
-      throw Exception('Failed to submit loan request: ${e.message}');
+      throw Exception(
+          'Failed to submit loan request: ${e.message}');
     } catch (e) {
-      throw Exception('An unexpected network error occurred while submitting.');
+      throw Exception(
+          'An unexpected error occurred while submitting.');
     }
   }
 
-  // ── Lender: my active loans ────────────────────────────────────────────────
+  // ── Borrower: active loans ─────────────────────────────────────────────────
 
+  /// Returns all disbursed loans where the current user is the borrower.
   Future<List<ActiveLoanModel>> fetchMyActiveLoansAsBorrower() async {
     final uid = _uid;
     if (uid == null) return [];
 
     try {
-      final List<Map<String, dynamic>> data = await _db
+      final data = await _db
           .from('active_loans')
           .select('*, loan_requests(purpose)')
           .eq('borrower_id', uid)
           .order('created_at', ascending: false);
 
-      return data.map((row) => ActiveLoanModel.fromJson(row)).toList();
+      return (data as List)
+          .map((row) => ActiveLoanModel.fromJson(
+              Map<String, dynamic>.from(row as Map)))
+          .toList();
     } on PostgrestException catch (e) {
       throw Exception('Failed to fetch active loans: ${e.message}');
     } catch (e) {
-      throw Exception('An unexpected network error occurred.');
+      throw Exception('An unexpected error occurred.');
     }
   }
 
-  // ── Lender: my contributions ───────────────────────────────────────────────
+  // ── Lender: contributions ──────────────────────────────────────────────────
 
+  /// Returns all funding contributions made by the current user.
   Future<List<LoanContributionModel>> fetchMyContributions() async {
     final uid = _uid;
     if (uid == null) return [];
 
     try {
-      final List<Map<String, dynamic>> data = await _db
+      final data = await _db
           .from('loan_contributions')
           .select(
             '*, loan_requests(purpose, profiles!borrower_id(full_name, email))',
@@ -154,53 +187,67 @@ class LoanRepository {
           .eq('lender_id', uid)
           .order('created_at', ascending: false);
 
-      return data.map((row) => LoanContributionModel.fromJson(row)).toList();
+      return (data as List)
+          .map((row) => LoanContributionModel.fromJson(
+              Map<String, dynamic>.from(row as Map)))
+          .toList();
     } on PostgrestException catch (e) {
-      throw Exception('Failed to fetch contributions: ${e.message}');
+      throw Exception(
+          'Failed to fetch contributions: ${e.message}');
     } catch (e) {
-      throw Exception('An unexpected network error occurred.');
+      throw Exception('An unexpected error occurred.');
     }
   }
 
-  /// Funds a loan request by executing the atomic PostgreSQL RPC function.
-  Future<LoanContributionModel?> fundLoanRequest({
+  /// Funds a community loan request via an atomic server-side RPC.
+  ///
+  /// Caps the contribution at the remaining unfunded amount.
+  /// Returns the created [LoanContributionModel] on success.
+  Future<LoanContributionModel> fundLoanRequest({
     required String loanRequestId,
     required double amount,
     double platformCutRate = 0.02,
   }) async {
     final uid = _uid;
     if (uid == null) {
-      throw Exception('User must be logged in to fund a request.');
+      throw Exception(
+          'You must be signed in to fund a loan request.');
     }
 
     try {
-      // 1. Fetch current request to validate and compute expected return/cuts
-      final Map<String, dynamic> requestData = await _db
+      // 1. Validate the request is still active and compute amounts.
+      final requestData = await _db
           .from('loan_requests')
           .select('amount_requested, funded_amount, interest_rate, status')
           .eq('id', loanRequestId)
           .single();
 
-      final status = requestData['status'] as String? ?? '';
+      final status =
+          requestData['status'] as String? ?? '';
       if (status != 'active') {
-        throw Exception('This loan request is no longer active.');
+        throw Exception(
+            'This loan request is no longer accepting contributions.');
       }
 
-      final amountRequested = (requestData['amount_requested'] as num).toDouble();
-      final fundedAmount = (requestData['funded_amount'] as num).toDouble();
+      final amountRequested =
+          (requestData['amount_requested'] as num).toDouble();
+      final fundedAmount =
+          (requestData['funded_amount'] as num).toDouble();
       final remaining = amountRequested - fundedAmount;
 
-      // Cap contribution at remaining amount
       final actualAmount = amount > remaining ? remaining : amount;
       if (actualAmount <= 0) {
-        throw Exception('This loan request is already fully funded.');
+        throw Exception(
+            'This loan request is already fully funded.');
       }
 
-      final interestRate = (requestData['interest_rate'] as num).toDouble();
-      final expectedReturn = actualAmount * (1 + interestRate / 100);
+      final interestRate =
+          (requestData['interest_rate'] as num).toDouble();
+      final expectedReturn =
+          actualAmount * (1 + interestRate / 100);
       final platformCut = actualAmount * platformCutRate;
 
-      // 2. Call the server-side atomic PostgreSQL stored procedure
+      // 2. Execute the atomic stored procedure.
       await _db.rpc('fund_loan_request', params: {
         'p_loan_request_id': loanRequestId,
         'p_lender_id': uid,
@@ -209,8 +256,8 @@ class LoanRepository {
         'p_platform_cut': platformCut,
       });
 
-      // 3. Retrieve the created contribution record to return
-      final Map<String, dynamic> contributionData = await _db
+      // 3. Retrieve the newly created contribution record.
+      final contributionData = await _db
           .from('loan_contributions')
           .select()
           .eq('loan_request_id', loanRequestId)
@@ -219,12 +266,14 @@ class LoanRepository {
           .limit(1)
           .single();
 
-      return LoanContributionModel.fromJson(contributionData);
+      return LoanContributionModel.fromJson(
+          Map<String, dynamic>.from(contributionData));
     } on PostgrestException catch (e) {
       throw Exception('Transaction failed: ${e.message}');
     } catch (e) {
       if (e is Exception) rethrow;
-      throw Exception('An unexpected network error occurred during funding.');
+      throw Exception(
+          'An unexpected error occurred during funding.');
     }
   }
 }

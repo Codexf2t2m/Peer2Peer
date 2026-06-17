@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app_routes.dart';
 import '../../../data/providers/data_providers.dart';
-import 'email_verification_screen.dart' show _OnboardingStepIndicator;
+import '../../../data/providers/supabase_providers.dart';
+import 'email_verification_screen.dart' show OnboardingStepIndicator;
 
 /// Step 2 of onboarding: connect a bank account via Stitch.
 ///
@@ -69,7 +70,7 @@ class _BankConnectScreenState extends ConsumerState<BankConnectScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _OnboardingStepIndicator(currentStep: 1),
+              const OnboardingStepIndicator(currentStep: 1),
               const SizedBox(height: 40),
 
               Container(

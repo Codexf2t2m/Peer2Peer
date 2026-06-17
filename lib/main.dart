@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'app_state.dart';
 import 'app_routes.dart';
 import 'data/providers/session_provider.dart';
-import 'ui/ask_kutlo/ask_kutlo_screen.dart';
+import 'ui/ask_kutlo/widgets/ask_kutlo_screen.dart';
 import 'ui/auth/reset_password/widgets/reset_password_screen.dart';
 import 'ui/auth/sign_in/widgets/sign_in_screen.dart';
 import 'ui/auth/sign_up/widgets/sign_up_screen.dart';
-import 'ui/community/browse/community_screen.dart';
-import 'ui/community/fund/community_fund_screen.dart';
+import 'ui/community/browse/widgets/community_screen.dart';
+import 'ui/community/fund/widgets/community_fund_screen.dart';
 import 'ui/home/widgets/home_screen.dart';
 import 'ui/lend/widgets/lend_screen.dart';
-import 'ui/loans/widget/active_loans_screen.dart';
+import 'ui/loans/widgets/active_loans_screen.dart';
 import 'ui/onboarding/bank_connect_screen.dart';
 import 'ui/onboarding/credit_assessment_screen.dart';
 import 'ui/onboarding/email_verification_screen.dart';
 import 'ui/onboarding/kyc_upload_screen.dart';
-import 'ui/complaints/complaint_screen.dart';
+import 'ui/complaints/widgets/complaint_screen.dart';
 import 'ui/profile/widgets/profile_screen.dart';
 import 'ui/request/widgets/request_screen.dart';
 import 'ui/splash/widget/splash_screen.dart';
@@ -49,11 +48,13 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light(),
       initialRoute: AppRoutes.splash,
       onGenerateRoute: (settings) {
-        // Routes that require arguments
         if (settings.name == AppRoutes.communityFund) {
+          // loanRequestId is passed as the route argument from the
+          // community browse screen's Navigator.pushNamed call.
+          final loanRequestId = settings.arguments as String? ?? '';
           return MaterialPageRoute<void>(
             builder: (_) => CommunityFundScreen(
-              memberId: settings.arguments as String?,
+              loanRequestId: loanRequestId,
             ),
             settings: settings,
           );

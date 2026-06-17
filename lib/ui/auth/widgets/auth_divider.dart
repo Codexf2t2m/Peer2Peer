@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pula_pay/ui/auth/reset_password/widgets/reset_password_screen.dart';
 
 class AuthDivider extends StatelessWidget {
   const AuthDivider({super.key, this.label = 'or'});
@@ -19,3 +20,5 @@ class AuthDivider extends StatelessWidget {
     );
   }
 }
+
+

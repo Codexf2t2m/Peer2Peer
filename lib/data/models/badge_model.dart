@@ -1,57 +1,80 @@
+
+// Maps to the BADGES and USER_BADGES tables from the ERD.
+//
+// BADGES:      code PK, name, description, requirement_description, icon_name
+// USER_BADGES: id, user_id FK, badge_code FK, earned_at, is_featured
+//
+// The original screen hardcoded badge types as integers (0,1,2,3).
+// This model gives badges a proper identity so the UI is data-driven.
+
+/// The visual style / tier of a badge.
+enum BadgeTier {
+  bronze,   // Verified Member
+  silver,   // Trusted Borrower
+  gold,     // Top Repayer
+  platinum, // Clean Record
+}
+
+/// A badge earned (or locked) by a user.
 class BadgeModel {
   const BadgeModel({
     required this.code,
     required this.name,
-    this.description,
-    this.requirementDescription,
-    this.iconName,
+    required this.description,
+    required this.iconName,
+    required this.tier,
+    this.earnedAt,
+    this.isFeatured = false,
+    this.progressToUnlock,
   });
 
   final String code;
   final String name;
-  final String? description;
-  final String? requirementDescription;
-  final String? iconName;
+  final String description;
+  final String iconName;
+  final BadgeTier tier;
 
-  factory BadgeModel.fromJson(Map<String, dynamic> json) {
-    return BadgeModel(
-      code: json['code'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String?,
-      requirementDescription: json['requirement_description'] as String?,
-      iconName: json['icon_name'] as String?,
-    );
-  }
-}
+  /// Null when the badge has not yet been earned.
+  final DateTime? earnedAt;
 
-class UserBadgeModel {
-  const UserBadgeModel({
-    required this.id,
-    required this.userId,
-    required this.badgeCode,
-    required this.earnedAt,
-    required this.isFeatured,
-    this.badge,
-  });
-
-  final String id;
-  final String userId;
-  final String badgeCode;
-  final DateTime earnedAt;
   final bool isFeatured;
 
-  /// Populated when fetched with a join on `badges`.
-  final BadgeModel? badge;
+  /// 0.0–1.0 progress toward earning this badge. Null when already earned.
+  final double? progressToUnlock;
 
-  factory UserBadgeModel.fromJson(Map<String, dynamic> json) {
-    final badgeJson = json['badges'] as Map<String, dynamic>?;
-    return UserBadgeModel(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      badgeCode: json['badge_code'] as String,
-      earnedAt: DateTime.parse(json['earned_at'] as String),
+  bool get isEarned => earnedAt != null;
+  bool get isLocked => !isEarned;
+
+  // Serialisation 
+
+  factory BadgeModel.fromJson(Map<String, dynamic> json) {
+    final earnedAt = json['earned_at'] != null
+        ? DateTime.parse(json['earned_at'] as String)
+        : null;
+
+    return BadgeModel(
+      code: json['badge_code'] as String? ?? json['code'] as String,
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      iconName: json['icon_name'] as String? ?? 'star',
+      tier: BadgeTier.values.firstWhere(
+        (t) => t.name == (json['tier'] as String? ?? 'bronze'),
+        orElse: () => BadgeTier.bronze,
+      ),
+      earnedAt: earnedAt,
       isFeatured: json['is_featured'] as bool? ?? false,
-      badge: badgeJson != null ? BadgeModel.fromJson(badgeJson) : null,
+      progressToUnlock:
+          (json['progress_to_unlock'] as num?)?.toDouble(),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BadgeModel &&
+          runtimeType == other.runtimeType &&
+          code == other.code;
+
+  @override
+  int get hashCode => code.hashCode;
 }

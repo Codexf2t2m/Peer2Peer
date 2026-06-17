@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app_routes.dart';
 import '../../../data/providers/data_providers.dart';
 import '../../../data/services/credit_service.dart';
-import 'email_verification_screen.dart' show _OnboardingStepIndicator;
+import 'email_verification_screen.dart' show OnboardingStepIndicator;
 
 /// Step 4 of onboarding: run the credit assessment.
 ///
@@ -83,7 +83,7 @@ class _CreditAssessmentScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _OnboardingStepIndicator(currentStep: 3),
+              const OnboardingStepIndicator(currentStep: 3),
               const SizedBox(height: 40),
 
               if (isLoading || _result == null) ...[

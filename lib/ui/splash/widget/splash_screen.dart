@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app_routes.dart';
-import '../../../../data/providers/data_providers.dart';
 import '../../../../data/providers/session_provider.dart';
+import '../../../../data/providers/supabase_providers.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
