@@ -1,6 +1,3 @@
-// lib/ui/home/widgets/home_action_button.dart
-//
-// Fixed: icon was typed as List<List<dynamic>> — now IconData.
 
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -18,7 +15,8 @@ class HomeActionButton extends StatelessWidget {
 
   final String label;
   final bool filled;
-  final IconData icon; // was List<List<dynamic>> — fixed
+  // HugeIcons values are List<List<dynamic>>, not IconData
+  final List<List<dynamic>> icon;
   final VoidCallback onTap;
 
   @override

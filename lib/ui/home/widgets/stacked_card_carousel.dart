@@ -1,4 +1,4 @@
-// lib/ui/home/widgets/stacked_card_carousel.dart
+
 // Unchanged — self-contained StatefulWidget with no provider dependencies.
 
 import 'package:flutter/material.dart';

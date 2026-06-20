@@ -1,9 +1,13 @@
-// lib/ui/home/widgets/home_transactions_sheet.dart
-//
-// Extracted from _showTransactions() on the original screen.
+
+// TransactionTile still expects AppTransaction.
+// We pass WalletTransactionModel.toAppTransaction() as an adapter
+// until TransactionTile is updated to accept WalletTransactionModel.
+
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import '../../../../app_state.dart';
 import '../../../../data/models/wallet_transaction_model.dart';
 import '../../../../shared/widgets/transaction_tile.dart';
 
@@ -41,29 +45,47 @@ class HomeTransactionsSheet extends StatelessWidget {
         children: [
           Text(
             title,
-            style:
-                Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: transactions.isEmpty
                 ? const Center(
-                    child:
-                        Text('No transaction activity yet.'))
+                    child: Text(
+                        'No transaction activity yet.'))
                 : ListView.separated(
                     itemCount: transactions.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const SizedBox(height: 16),
                     itemBuilder: (context, index) =>
                         TransactionTile(
-                      transaction: transactions[index],
+                      transaction: _toAppTransaction(
+                          transactions[index]),
                     ),
                   ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Adapter: converts WalletTransactionModel to AppTransaction
+  /// until TransactionTile is updated to accept the new type.
+  static AppTransaction _toAppTransaction(
+      WalletTransactionModel tx) {
+    return AppTransaction(
+      title: tx.title,
+      isCredit: tx.isCredit,
+      icon: HugeIcons.strokeRoundedArrowDownLeft01,
+      subtitle: tx.subtitle,
+      amount: tx.isCredit ? tx.grossAmount : -tx.grossAmount,
+      category: tx.isCredit
+          ? TransactionCategory.repayment
+          : TransactionCategory.funding,
+      createdAt: tx.createdAt,
     );
   }
 }

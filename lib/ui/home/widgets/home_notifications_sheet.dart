@@ -1,5 +1,4 @@
-// lib/ui/home/widgets/home_notifications_sheet.dart
-//
+
 // Extracted from _showNotifications() on the original screen.
 
 import 'package:flutter/material.dart';

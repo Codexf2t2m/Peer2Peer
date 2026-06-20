@@ -1,5 +1,4 @@
-// lib/data/models/notification_model.dart
-//
+
 // Maps to the NOTIFICATIONS table:
 //   id, user_id, type, message, is_read, created_at
 

@@ -42,7 +42,9 @@ class AppSession extends ChangeNotifier {
 
     final url = dotenv.env['SUPABASE_URL']?.trim() ?? '';
     final anonKey = dotenv.env['SUPABASE_ANON_KEY']?.trim() ?? '';
-    final hasValidUrl = Uri.tryParse(url)?.hasAbsolutePath ?? false;
+    final parsedUrl = Uri.tryParse(url);
+    final hasValidUrl =
+        parsedUrl != null && parsedUrl.hasScheme && parsedUrl.host.isNotEmpty;
 
     if (url.isEmpty || anonKey.isEmpty || !hasValidUrl) {
       _supabaseEnabled = false;

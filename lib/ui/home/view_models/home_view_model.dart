@@ -1,5 +1,4 @@
-// lib/ui/home/view_models/home_view_model.dart
-//
+
 // UC: View Available Lending Amount, View Monthly Statement,
 //     View Borrowing Limit overview, Browse (search entry point)
 //

@@ -1,11 +1,9 @@
-// lib/ui/home/widgets/home_screen.dart
-//
+
 // UC: View Available Lending Amount, View Monthly Statement,
 //     View Borrowing Limit (overview), Browse Community Feed (entry),
 //     Request Community Loan (entry), Financial Guidance (entry)
 //
 // Architecture
-// ────────────
 // • ConsumerWidget — zero local state.
 // • Watches ONE AsyncValue<HomeOverviewModel> from homeViewModelProvider.
 //   Previously: four separate providers each invalidated independently.
@@ -69,7 +67,7 @@ class HomeScreen extends ConsumerWidget {
             onSearch: () {},
             onNotifications: () {},
           ),
-          error: (_, __) => HomeHeader(
+          error: (_, _) => HomeHeader(
             displayName: '',
             hasUnreadNotifications: false,
             onSearch: () {},

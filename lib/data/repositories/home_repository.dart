@@ -1,5 +1,4 @@
-// lib/data/repositories/home_repository.dart
-//
+
 // Single data boundary for the Home feature.
 //
 // Fetches sequentially to avoid Future.wait type-inference issues:

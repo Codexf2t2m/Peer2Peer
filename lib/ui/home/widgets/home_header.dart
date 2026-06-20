@@ -1,8 +1,3 @@
-// lib/ui/home/widgets/home_header.dart
-//
-// Fixed: icon fields were typed as List<List<dynamic>> — now IconData.
-// Added: hasUnreadNotifications drives the notification dot from the VM
-// instead of being hardcoded true.
 
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -42,15 +37,18 @@ class HomeHeader extends StatelessWidget {
             displayName.isEmpty
                 ? 'Hi there'
                 : 'Hi, $displayName',
-            style:
-                Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: -0.1,
-                    ),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.1,
+                ),
           ),
         ),
         HeaderIconButton(
+          // HugeIcons values are List<List<dynamic>>
           icon: HugeIcons.strokeRoundedSearch01,
           onTap: onSearch,
         ),
@@ -73,7 +71,8 @@ class HeaderIconButton extends StatelessWidget {
     this.showDot = false,
   });
 
-  final IconData icon; // was List<List<dynamic>> — fixed
+  // HugeIcons values are List<List<dynamic>>, not IconData
+  final List<List<dynamic>> icon;
   final VoidCallback onTap;
   final bool showDot;
 

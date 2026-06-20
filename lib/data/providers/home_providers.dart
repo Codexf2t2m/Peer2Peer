@@ -1,4 +1,3 @@
-// lib/data/providers/home_providers.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -1,5 +1,4 @@
-// lib/ui/home/widgets/home_overview_sheet.dart
-//
+
 // Extracted from _showOverview() on the original screen.
 
 import 'package:flutter/material.dart';

@@ -1,7 +1,3 @@
-// lib/ui/home/widgets/home_search_sheet.dart
-//
-// Extracted from _openSearch() on the original screen.
-// _SearchItem.icon was typed as List<List<dynamic>> — fixed to IconData.
 
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -33,15 +29,18 @@ class HomeSearchSheet extends StatefulWidget {
   }
 
   @override
-  State<HomeSearchSheet> createState() => _HomeSearchSheetState();
+  State<HomeSearchSheet> createState() =>
+      _HomeSearchSheetState();
 }
 
-class _HomeSearchSheetState extends State<HomeSearchSheet> {
+class _HomeSearchSheetState
+    extends State<HomeSearchSheet> {
   final _controller = TextEditingController();
   String _query = '';
   List<Map<String, dynamic>> _borrowerResults = [];
 
-  static const _quickLinks = [
+  // HugeIcons values are List<List<dynamic>>
+  static final _quickLinks = [
     _SearchItem(
       title: 'Community',
       subtitle: 'Browse borrowers',
@@ -69,7 +68,8 @@ class _HomeSearchSheetState extends State<HomeSearchSheet> {
       setState(() => _borrowerResults = []);
       return;
     }
-    final results = await widget.repository.searchBorrowers(q);
+    final results =
+        await widget.repository.searchBorrowers(q);
     if (mounted) setState(() => _borrowerResults = results);
   }
 
@@ -98,9 +98,11 @@ class _HomeSearchSheetState extends State<HomeSearchSheet> {
             decoration: InputDecoration(
               prefixIcon:
                   const Icon(Icons.search, size: 20),
-              hintText: 'Search borrowers or features...',
+              hintText:
+                  'Search borrowers or features...',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16)),
+                  borderRadius:
+                      BorderRadius.circular(16)),
               suffixIcon: _query.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear,
@@ -118,7 +120,8 @@ class _HomeSearchSheetState extends State<HomeSearchSheet> {
             child: ListView(
               children: [
                 if (filteredLinks.isNotEmpty) ...[
-                  const SectionTitle(title: 'Quick links'),
+                  const SectionTitle(
+                      title: 'Quick links'),
                   const SizedBox(height: 10),
                   ...filteredLinks.map(
                     (item) => ListTile(
@@ -153,11 +156,13 @@ class _HomeSearchSheetState extends State<HomeSearchSheet> {
                         'No borrowers found matching query.')
                   else
                     ..._borrowerResults.map((row) {
-                      final profile = row['profiles']
-                          as Map<String, dynamic>?;
-                      final name = profile?['full_name']
-                              as String? ??
-                          'Borrower';
+                      final profile =
+                          row['profiles']
+                              as Map<String, dynamic>?;
+                      final name =
+                          profile?['full_name']
+                                  as String? ??
+                              'Borrower';
                       final rep =
                           (profile?['reputation_score']
                                       as num?)
@@ -169,7 +174,8 @@ class _HomeSearchSheetState extends State<HomeSearchSheet> {
                         leading: CircleAvatar(
                           child: Text(
                               name.isNotEmpty
-                                  ? name[0].toUpperCase()
+                                  ? name[0]
+                                      .toUpperCase()
                                   : '?'),
                         ),
                         title: Text(name),
@@ -212,6 +218,6 @@ class _SearchItem {
 
   final String title;
   final String subtitle;
-  final IconData icon; // was List<List<dynamic>> — fixed
+  final List<List<dynamic>> icon; // HugeIcons type
   final String route;
 }

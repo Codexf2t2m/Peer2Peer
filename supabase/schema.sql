@@ -690,4 +690,3 @@ BEGIN
   RETURN v_connection_id;
 END;
 $$;
-

@@ -1,5 +1,4 @@
-// lib/data/models/home_overview_model.dart
-//
+
 // Aggregates everything HomeScreen needs in one typed object.
 // Replaces the raw Map<String,dynamic> from lendingOverviewProvider
 // and the generic AppTransaction list from transactionsProvider.

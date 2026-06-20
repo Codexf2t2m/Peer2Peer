@@ -1,5 +1,5 @@
-// lib/ui/home/widgets/loan_performance_card.dart
-// Unchanged — kept as-is. Now receives live data from HomeOverviewModel
+
+//Now receives live data from HomeOverviewModel
 // instead of hardcoded constants.
 
 import 'package:flutter/material.dart';
