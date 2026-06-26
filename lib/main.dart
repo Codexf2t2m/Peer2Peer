@@ -1,122 +1,123 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'app_routes.dart';
+import 'data/providers/session_provider.dart';
+import 'ui/ask_kutlo/widgets/ask_kutlo_screen.dart';
+import 'ui/auth/reset_password/widgets/reset_password_screen.dart';
+import 'ui/auth/sign_in/widgets/sign_in_screen.dart';
+import 'ui/auth/sign_up/widgets/sign_up_screen.dart';
+import 'ui/community/browse/widgets/community_screen.dart';
+import 'ui/community/fund/widgets/community_fund_screen.dart';
+import 'ui/home/widgets/home_screen.dart';
+import 'ui/lend/widgets/lend_screen.dart';
+import 'ui/loans/widgets/active_loans_screen.dart';
+import 'ui/onboarding/bank_connect/widgets/bank_connect_screen.dart';
+import 'ui/onboarding/credit_assessment/widgets/credit_assessment_screen.dart';
+import 'ui/onboarding/email_verification/widgets/email_verification_screen.dart';
+import 'ui/onboarding/kyc_upload/widgets/kyc_upload_screen.dart';
+import 'ui/complaints/widgets/complaint_screen.dart';
+import 'ui/profile/widgets/profile_screen.dart';
+import 'ui/request/widgets/request_screen.dart';
+import 'ui/splash/widgets/splash_screen.dart';
+import 'ui/wallet/widgets/wallet_screen.dart';
+import 'ui/app_theme.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ── Supabase must be initialized BEFORE any provider reads
+  // Supabase.instance.client (supabaseClientProvider does exactly that).
+  // SessionNotifier.bootstrap() only loads dotenv and checks
+  // currentUser — it does NOT call Supabase.initialize() itself,
+  // so that step has to happen here in main() first.
+  bool supabaseEnabled = false;
+  try {
+    await dotenv.load(fileName: '.env');
+    final url = dotenv.env['SUPABASE_URL']?.trim() ?? '';
+    final anonKey = dotenv.env['SUPABASE_ANON_KEY']?.trim() ?? '';
+    final hasValidUrl = Uri.tryParse(url)?.hasAbsolutePath ?? false;
+
+    if (url.isNotEmpty && anonKey.isNotEmpty && hasValidUrl) {
+      await Supabase.initialize(url: url, anonKey: anonKey);
+      supabaseEnabled = true;
+    }
+  } catch (_) {
+    // .env missing or malformed — fall through to demo mode.
+    supabaseEnabled = false;
+  }
+
+  final container = ProviderContainer();
+
+  // Only call bootstrap (which reads Supabase.instance.client via
+  // supabaseClientProvider) once initialization above has actually run.
+  // If Supabase was never enabled, bootstrap() will detect that itself
+  // via its own dotenv checks and fall back to demo mode without
+  // touching Supabase.instance.
+  if (supabaseEnabled) {
+    await container.read(sessionProvider.notifier).bootstrap();
+  }
+
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      title: 'Pula Pay',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      initialRoute: AppRoutes.splash,
+      onGenerateRoute: (settings) {
+        if (settings.name == AppRoutes.communityFund) {
+          // loanRequestId is passed as the route argument from the
+          // community browse screen's Navigator.pushNamed call.
+          final loanRequestId = settings.arguments as String? ?? '';
+          return MaterialPageRoute<void>(
+            builder: (_) => CommunityFundScreen(
+              loanRequestId: loanRequestId,
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+            settings: settings,
+          );
+        }
+        return null;
+      },
+      routes: {
+        // Core
+        AppRoutes.splash: (_) => const SplashScreen(),
+        AppRoutes.login: (_) => const LoginScreen(),
+        AppRoutes.createAccount: (_) => const CreateAccountScreen(),
+        AppRoutes.resetPassword: (_) => const ResetPasswordScreen(),
+        AppRoutes.home: (_) => const HomeScreen(),
+        AppRoutes.profile: (_) => const ProfileScreen(),
+
+        // Main features
+        AppRoutes.community: (_) => const CommunityScreen(),
+        AppRoutes.lend: (_) => const LendScreen(),
+        AppRoutes.wallet: (_) => const WalletScreen(),
+        AppRoutes.request: (_) => const RequestScreen(),
+        AppRoutes.askKutlo: (_) => const AskKutloScreen(),
+
+        // Onboarding flow
+        AppRoutes.emailVerification: (_) => const EmailVerificationScreen(),
+        AppRoutes.bankConnect: (_) => const BankConnectScreen(),
+        AppRoutes.kycUpload: (_) => const KycUploadScreen(),
+        AppRoutes.creditAssessment: (_) => const CreditAssessmentScreen(),
+
+        // Additional feature screens
+        AppRoutes.activeLoans: (_) => const ActiveLoansScreen(),
+        AppRoutes.complaint: (_) => const ComplaintScreen(),
+      },
     );
   }
 }
