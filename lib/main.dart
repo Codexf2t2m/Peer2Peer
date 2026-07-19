@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_routes.dart';
 import 'data/providers/session_provider.dart';
@@ -28,37 +26,11 @@ import 'ui/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ── Supabase must be initialized BEFORE any provider reads
-  // Supabase.instance.client (supabaseClientProvider does exactly that).
-  // SessionNotifier.bootstrap() only loads dotenv and checks
-  // currentUser — it does NOT call Supabase.initialize() itself,
-  // so that step has to happen here in main() first.
-  bool supabaseEnabled = false;
-  try {
-    await dotenv.load(fileName: '.env');
-    final url = dotenv.env['SUPABASE_URL']?.trim() ?? '';
-    final anonKey = dotenv.env['SUPABASE_ANON_KEY']?.trim() ?? '';
-    final hasValidUrl = Uri.tryParse(url)?.hasAbsolutePath ?? false;
-
-    if (url.isNotEmpty && anonKey.isNotEmpty && hasValidUrl) {
-      await Supabase.initialize(url: url, anonKey: anonKey);
-      supabaseEnabled = true;
-    }
-  } catch (_) {
-    // .env missing or malformed — fall through to demo mode.
-    supabaseEnabled = false;
-  }
-
   final container = ProviderContainer();
 
-  // Only call bootstrap (which reads Supabase.instance.client via
-  // supabaseClientProvider) once initialization above has actually run.
-  // If Supabase was never enabled, bootstrap() will detect that itself
-  // via its own dotenv checks and fall back to demo mode without
-  // touching Supabase.instance.
-  if (supabaseEnabled) {
-    await container.read(sessionProvider.notifier).bootstrap();
-  }
+  // Bootstrap is the single Supabase initialization path. It loads .env,
+  // validates the URL, initializes Supabase, then reads the current session.
+  await container.read(sessionProvider.notifier).bootstrap();
 
   runApp(
     UncontrolledProviderScope(
