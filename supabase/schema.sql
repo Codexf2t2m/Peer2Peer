@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   available_lending_amount DECIMAL(15,2) DEFAULT 0,
   borrowing_limit DECIMAL(15,2) DEFAULT 0,
   reputation_score TEXT DEFAULT 'NEW',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   -- Onboarding state machine:
   -- pending_verification → email_verified → bank_connected → kyc_uploaded → credit_assessed → active
   onboarding_step TEXT DEFAULT 'pending_verification'
