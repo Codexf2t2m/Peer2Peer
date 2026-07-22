@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name TEXT,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL,
   phone TEXT,
   location TEXT,
   lending_mode TEXT CHECK (lending_mode IN ('direct', 'community', 'both')),
@@ -514,7 +514,9 @@ BEGIN
     NOW(),
     NOW()
   )
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    updated_at = NOW();
   RETURN NEW;
 END;
 $$;
